@@ -29,7 +29,14 @@ def load_model():
         print(f"[Z-Image] Loading from cache: {model_path}")
 
     print("[Z-Image] Loading pipeline to GPU...")
-    pipe = FluxPipeline.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+    pipe = FluxPipeline.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        text_encoder_2=None,
+        tokenizer_2=None,
+        image_encoder=None,
+        feature_extractor=None,
+    )
     pipe.to("cuda")
     pipe("warmup", num_inference_steps=1, width=64, height=64)
     print("[Z-Image] Ready on port 8080!")

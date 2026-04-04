@@ -2,9 +2,9 @@ FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
 WORKDIR /app
 
-# Install compatible versions
+# Install compatible versions - diffusers 0.35+ has ZImageTransformer2DModel
 RUN pip install --no-cache-dir \
-    diffusers==0.34.0 \
+    diffusers==0.35.2 \
     transformers==4.51.0 \
     accelerate \
     safetensors \
@@ -13,13 +13,12 @@ RUN pip install --no-cache-dir \
     sentencepiece \
     protobuf
 
-# Download Z-Image Turbo model at build time
+# Download Z-Image Turbo model files manually via huggingface_hub
+# (avoids FluxPipeline import issues during build - no GPU available)
 RUN python3 -c "\
-from diffusers import FluxPipeline; \
-import torch; \
+from huggingface_hub import snapshot_download; \
 print('Downloading Z-Image Turbo...'); \
-pipe = FluxPipeline.from_pretrained('Tongyi-MAI/Z-Image-Turbo', torch_dtype=torch.bfloat16); \
-pipe.save_pretrained('/models/z-image-turbo'); \
+snapshot_download('Tongyi-MAI/Z-Image-Turbo', local_dir='/models/z-image-turbo'); \
 print('Model saved!')"
 
 ENV MODEL_PATH=/models/z-image-turbo

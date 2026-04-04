@@ -1,18 +1,23 @@
 FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
-WORKDIR /app
-
-# Install deps only - model downloads at runtime (first cold start)
+# Install exact working versions (proven 2026-04-04)
 RUN pip install --no-cache-dir \
-    diffusers==0.35.2 \
+    torch==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+
+RUN pip install --no-cache-dir \
+    diffusers==0.36.0 \
     transformers==4.51.0 \
     accelerate \
     safetensors \
-    runpod \
     Pillow \
     sentencepiece \
     protobuf
 
-COPY handler.py /handler.py
+COPY handler.py /app/handler.py
+COPY boot.sh /app/boot.sh
+RUN chmod +x /app/boot.sh
 
-CMD ["python3", "-u", "/handler.py"]
+# Model loads from /workspace (persistent volume)
+ENV MODEL_PATH=/workspace/z-image-turbo
+
+CMD ["bash", "-c", "bash /app/boot.sh && sleep infinity"]

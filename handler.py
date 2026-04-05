@@ -1,7 +1,6 @@
 """
-Z-Image Turbo — RunPod GPU Pod Handler
-HTTP server on 0.0.0.0:8080 (MUST be 0.0.0.0 for RunPod proxy)
-Model persisted on /workspace volume.
+Z-Image Turbo — RunPod GPU Pod Handler (FIXED)
+Key params: guidance_scale=0.0, steps=9, ZImagePipeline, pipe.to("cuda")
 """
 import torch
 import base64
@@ -15,7 +14,6 @@ pipe = None
 
 def load_model():
     global pipe
-    from diffusers import DiffusionPipeline
     from huggingface_hub import snapshot_download
 
     model_path = os.environ.get("MODEL_PATH", "/workspace/z-image-turbo")
@@ -29,17 +27,16 @@ def load_model():
     else:
         print(f"[Z-Image] Loading from cache: {model_path}")
 
-    print("[Z-Image] Loading pipeline to GPU...")
-    pipe = DiffusionPipeline.from_pretrained(
+    # Use ZImagePipeline (NOT DiffusionPipeline/FluxPipeline)
+    from diffusers import ZImagePipeline
+    print("[Z-Image] Loading ZImagePipeline to GPU...")
+    pipe = ZImagePipeline.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,
-        text_encoder_2=None,
-        tokenizer_2=None,
-        image_encoder=None,
-        feature_extractor=None,
     )
-    pipe.enable_model_cpu_offload()
-    pipe("warmup", num_inference_steps=1, width=64, height=64)
+    pipe.to("cuda")
+    print("[Z-Image] Warmup...")
+    pipe("test", num_inference_steps=1, width=64, height=64, guidance_scale=0.0)
     print("[Z-Image] Ready on 0.0.0.0:8080!")
 
 
@@ -67,8 +64,9 @@ class Handler(BaseHTTPRequestHandler):
 
             w = inp.get("width", 1024)
             h = inp.get("height", 1024)
-            steps = inp.get("steps", 8)
-            cfg = inp.get("guidance_scale", 3.5)
+            # Z-Image Turbo: 9 steps (=8 DiT forwards), guidance=0.0
+            steps = inp.get("steps", 9)
+            cfg = inp.get("guidance_scale", 0.0)
 
             start = time.time()
             image = pipe(

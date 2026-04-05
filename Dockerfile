@@ -1,6 +1,6 @@
 FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
-# Install PyTorch 2.5.1 + diffusers from source (has ZImagePipeline)
+# PyTorch 2.5.1 + diffusers from source (ZImagePipeline)
 RUN pip install --no-cache-dir \
     torch==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 
@@ -11,7 +11,10 @@ RUN pip install --no-cache-dir \
     safetensors \
     Pillow \
     sentencepiece \
-    protobuf
+    protobuf \
+    realesrgan \
+    basicsr \
+    gfpgan
 
 COPY handler.py /app/handler.py
 COPY boot.sh /app/boot.sh
